@@ -35,13 +35,13 @@ class BilibiliTask:
 
     
     def get_dynamic_videos(self):
-        url = 'https://api.bilibili.com/x/web-interface/dynamic/region?ps=5&rid=1'
+        url = 'https://api.bilibili.com/x/web-interface/popular?ps=5&pn=1'
         try:
             res = requests.get(url, headers=self.headers)
             res.raise_for_status()
             data = res.json()
             if data['code'] == 0:
-                return [video['bvid'] for video in data.get('data', {}).get('archives', [])]
+                return [video['bvid'] for video in data.get('data', {}).get('list', [])]
             return []
         except Exception as e:
             logger.error(f"请求动态视频API异常: {e}")
