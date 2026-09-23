@@ -35,22 +35,31 @@ class BilibiliTask:
 
     
     def get_dynamic_videos(self):
-        url = 'https://api.bilibili.com/x/web-interface/popular?ps=5&pn=1'
-        try:
-            res = requests.get(url, headers=self.headers)
-            res.raise_for_status()
-            data = res.json()
-            if data['code'] == 0:
-                return [video['bvid'] for video in data.get('data', {}).get('list', [])]
-            return []
-        except Exception as e:
-            logger.error(f"请求动态视频API异常: {e}")
-            return []
+        # 优先使用热门视频接口，失败时自动降级到排行榜接口
+        for name, url in [
+            ('热门视频', 'https://api.bilibili.com/x/web-interface/popular?ps=5&pn=1'),
+            ('排行榜', 'https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all'),
+        ]:
+            try:
+                res = requests.get(url, headers=self.headers, timeout=15)
+                res.raise_for_status()
+                data = res.json()
+                if data['code'] == 0:
+                    bvids = [video['bvid'] for video in data.get('data', {}).get('list', [])]
+                    if bvids:
+                        logger.info(f"通过{name}接口获取到 {len(bvids)} 个视频。")
+                        return bvids
+                    logger.warning(f"{name}接口返回空列表，尝试降级。")
+                else:
+                    logger.warning(f"{name}接口返回异常: {data.get('message')}，尝试降级。")
+            except Exception as e:
+                logger.error(f"请求{name}API异常: {e}，尝试降级。")
+        return []
 
     def get_ranking_videos(self):
         url = 'https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all'
         try:
-            res = requests.get(url, headers=self.headers)
+            res = requests.get(url, headers=self.headers, timeout=15)
             res.raise_for_status()
             data = res.json()
             if data['code'] == 0:
