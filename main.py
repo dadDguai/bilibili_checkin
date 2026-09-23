@@ -3,7 +3,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from loguru import logger
 from bilibili import BilibiliTask
-from push import format_push_message, send_to_pushplus
+from push import format_push_message, send_to_pushplus, send_to_email
 
 class BeijingFormatter:
     @staticmethod
@@ -170,13 +170,23 @@ def main():
         if account_failed:
             any_failed = True
 
-    if config["PUSH_PLUS_TOKEN"] and all_results:
-        logger.info('准备发送推送通知...')
+    if all_results:
         title = "Bilibili 任务通知"
         content = format_push_message(all_results)
-        send_to_pushplus(config["PUSH_PLUS_TOKEN"], title, content)
-    else:
-        logger.info('未配置 PUSH_PLUS_TOKEN，跳过推送。')
+
+        # 1. PushPlus 推送（如已配置）
+        if config["PUSH_PLUS_TOKEN"]:
+            logger.info('准备发送 PushPlus 推送...')
+            send_to_pushplus(config["PUSH_PLUS_TOKEN"], title, content)
+        else:
+            logger.info('未配置 PUSH_PLUS_TOKEN，跳过 PushPlus 推送。')
+
+        # 2. QQ 邮箱邮件推送（如已配置 SMTP 相关变量）
+        if os.environ.get('SMTP_QQ_EMAIL') and os.environ.get('SMTP_QQ_AUTHCODE'):
+            logger.info('准备发送 QQ 邮箱邮件...')
+            send_to_email(title, content)
+        else:
+            logger.info('未配置 SMTP_QQ_EMAIL/SMTP_QQ_AUTHCODE，跳过邮件推送。')
 
     # 所有账号执行完毕，统一输出最终执行结果
     if any_failed:

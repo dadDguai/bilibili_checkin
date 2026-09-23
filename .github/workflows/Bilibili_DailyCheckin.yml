@@ -36,4 +36,11 @@ jobs:
           COIN_SELECT_LIKE: ${{ secrets.COIN_SELECT_LIKE }}
           COIN_VIDEO_SOURCE: ${{ secrets.COIN_VIDEO_SOURCE }}
           
+          # QQ 邮箱 SMTP 推送（可选，配置后任务结果会发到邮箱）
+          SMTP_QQ_EMAIL: ${{ secrets.SMTP_QQ_EMAIL }}
+          SMTP_QQ_AUTHCODE: ${{ secrets.SMTP_QQ_AUTHCODE }}
+          SMTP_TO_EMAIL: ${{ secrets.SMTP_TO_EMAIL }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          
         run: python main.py # 修改了执行的入口文件
